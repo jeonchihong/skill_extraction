@@ -1,14 +1,27 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import os
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
 # Streamlit 페이지 설정
 st.set_page_config(page_title="Job Skillset Extractor", layout="wide")
 
-# OpenAI API 키 설정
-llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
+# OpenAI API 키 설정 (Streamlit Cloud의 Secrets & Variables 사용)
+api_key = st.secrets["OPENAI_API_KEY"]
+
+if not api_key:
+    st.error("⚠️ OpenAI API 키가 설정되지 않았습니다. Streamlit Cloud의 Secrets & Variables 설정을 확인하세요.")
+    st.stop()
+
+# OpenAI LLM 인스턴스 생성
+try:
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.7, openai_api_key=api_key)
+    st.sidebar.success("✅ OpenAI API 연결 성공!")
+except Exception as e:
+    st.error(f"❌ OpenAI API 연결 실패: {e}")
+    st.stop()
 
 # 샘플 잡공고 데이터프레임 불러오기 또는 업로드
 st.sidebar.header("Upload Job Postings CSV")
@@ -55,9 +68,13 @@ if st.sidebar.button("Extract Skills"):
         prompt = PromptTemplate(input_variables=["job_description"], template=prompt_template)
         formatted_prompt = prompt.format(job_description=job_desc)
         
-        # LangChain API 호출
-        response = llm.predict(formatted_prompt)
-        skills = response.strip()
+        try:
+            response = llm.predict(formatted_prompt)
+            skills = response.strip()
+        except Exception as e:
+            st.error(f"❌ OpenAI API 요청 실패: {e}")
+            skills = "Error in extraction"
+        
         skillset_results.append({"Job Title": row["Job Title"], "Extracted Skills": skills})
     
     # 결과 데이터프레임 생성 및 저장
