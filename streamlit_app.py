@@ -75,7 +75,9 @@ if st.sidebar.button("Extract Skills"):
             st.error(f"❌ OpenAI API 요청 실패: {e}")
             skills = "Error in extraction"
         
-        skillset_results.append({"Job Title": row["Job Title"], "Extracted Skills": skills})
+        skillset_results.append({"Job Title": row["Job Title"], 
+                                 "Job Description": row["Job Description"], 
+                                 "Extracted Skills": skills})
     
     # 결과 데이터프레임 생성 및 저장
     extracted_df = pd.DataFrame(skillset_results)
